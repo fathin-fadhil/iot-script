@@ -220,6 +220,39 @@ void pzemRead(){
       lcd.print(voltage, 1); lcd.print("V"); lcd.setCursor(7,0); lcd.print(energy, 3); lcd.print("kWh");
       lcd.setCursor(0,1);
       lcd.print(power); lcd.print("W"); lcd.setCursor(9,1); lcd.print(current); lcd.print("A");
+
+      //upload basis api
+      if (Firebase.setFloat(firebaseData, "/Wmeter/current", current)) {
+      Serial.println("current update success");
+      } else {
+        Serial.println("current update failure");
+        Serial.println("REASON: " + firebaseData.errorReason());
+        Serial.println("------------------------------------");
+        }
+
+      if (Firebase.setFloat(firebaseData, "/Wmeter/tWatt", energy)) {
+      Serial.println("energy update success");
+      } else {
+        Serial.println("energy update failure");
+        Serial.println("REASON: " + firebaseData.errorReason());
+        Serial.println("------------------------------------");
+        }
+
+      if (Firebase.setFloat(firebaseData, "/Wmeter/volt", voltage)) {
+      Serial.println("voltage update success");
+      } else {
+        Serial.println("voltage update failure");
+        Serial.println("REASON: " + firebaseData.errorReason());
+        Serial.println("------------------------------------");
+        }
+
+      if (Firebase.setFloat(firebaseData, "/Wmeter/watt", power)) {
+      Serial.println("power update success");
+      } else {
+        Serial.println("power update failure");
+        Serial.println("REASON: " + firebaseData.errorReason());
+        Serial.println("------------------------------------");
+        }
   }
   Serial.println();
 }

@@ -1,29 +1,54 @@
 #include <ESP8266WiFi.h>
 #include "FirebaseESP8266.h"
 #include <DHT.h>
+#include <PZEM004Tv30.h>
+#include <SoftwareSerial.h>
 
+//start of wifi stuff
 #ifndef STASSID
 #define STASSID "ZTE_2.4G_ANGQrk"
 #define STAPSK  "tifaniyo"
 #endif
 
+const char* ssid     = STASSID;
+const char* password = STAPSK;
+//end of wifi
+
+//start of pzem
+#if !defined(PZEM_RX_PIN) && !defined(PZEM_TX_PIN)
+#define PZEM_RX_PIN D5
+#define PZEM_TX_PIN D6
+#endif
+
+SoftwareSerial pzemSWSerial(PZEM_RX_PIN, PZEM_TX_PIN);
+PZEM004Tv30 pzem(pzemSWSerial);
+
+float voltage = 0.0;
+float current = 0.0;
+float power = 0.0;
+float energy = 0.0;
+float frequency = 0.0;
+float pf = 0.0;
+//end of pzem
+
+//start of firebase
 #define FIREBASE_HOST "fathinlka-default-rtdb.asia-southeast1.firebasedatabase.app" 
 #define FIREBASE_AUTH "J60tG3NEI0NakoIeam9oizPTrbuYL6DSHdzDPCde"
 
+FirebaseData firebaseData;
+FirebaseJson json;
+//end of firebase
+
+//dht stuff
 #define DHTPIN D1
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
-
-#define fan1Pin D2
-
-FirebaseData firebaseData;
-FirebaseJson json;
-
-const char* ssid     = STASSID;
-const char* password = STAPSK;
-
 float h;
 float t;
+//end of dht
+
+//pin declaration
+#define fan1Pin D2
 
 void setup() {
   Serial.begin(115200);
@@ -52,22 +77,8 @@ void setup() {
 void loop() {
   sensorUpdate();
   relayUpdate();
-
-  if (Firebase.getBool(firebaseData, "/Fan/isAuto")){
-    if (firebaseData.boolData()) {
-      Serial.println("Fan is in auto");
-      if(t>30){
-        digitalWrite(fan1Pin, HIGH);
-        Serial.println("Fan is on");
-      } else {
-        digitalWrite(fan1Pin, LOW);
-        Serial.println("Fan is off");
-      }
-    } else {
-      Serial.println("Fan is in manual");
-      fanUpdate();
-    }
-  }
+  fanUpdate();
+  pzemRead();
 
   Serial.println("-------------------------");
   Serial.println();
@@ -128,13 +139,64 @@ void relayUpdate(){
 }
 
 void fanUpdate(){
-  if (Firebase.getString(firebaseData, "/Fan/fan1")){
-    if (firebaseData.stringData() == "ON") {
-    Serial.println("fan 1 is ON");
-    digitalWrite(fan1Pin, HIGH);
-    } else {
-      Serial.println("fan 1 is OFF");
-      digitalWrite(fan1Pin, LOW);
+  if (Firebase.getBool(firebaseData, "/Fan/isAuto")){
+    if (firebaseData.boolData()) {
+      Serial.println("Fan is in auto");
+      if(t>30){
+        digitalWrite(fan1Pin, HIGH);
+        Serial.println("Fan is on");
+      } else {
+        digitalWrite(fan1Pin, LOW);
+        Serial.println("Fan is off");
       }
+    } else {
+      Serial.println("Fan is in manual");
+      if (Firebase.getString(firebaseData, "/Fan/fan1")){
+        if (firebaseData.stringData() == "ON") {
+          Serial.println("fan 1 is ON");
+          digitalWrite(fan1Pin, HIGH);
+        } else {
+          Serial.println("fan 1 is OFF");
+          digitalWrite(fan1Pin, LOW);
+          }
+      }
+    }
   }
+}
+
+void pzemRead(){
+  Serial.print("Custom Address:");
+  Serial.println(pzem.readAddress(), HEX);
+
+  voltage = pzem.voltage();
+  current = pzem.current();
+  power = pzem.power();
+  energy = pzem.energy();
+  frequency = pzem.frequency();
+  pf = pzem.pf();
+
+  // Check if the data is valid
+  if(isnan(voltage)){
+      Serial.println("Error reading voltage");
+  } else if (isnan(current)) {
+      Serial.println("Error reading current");
+  } else if (isnan(power)) {
+      Serial.println("Error reading power");
+  } else if (isnan(energy)) {
+      Serial.println("Error reading energy");
+  } else if (isnan(frequency)) {
+      Serial.println("Error reading frequency");
+  } else if (isnan(pf)) {
+      Serial.println("Error reading power factor");
+  } else {
+
+      // Print the values to the Serial console
+      Serial.print("Voltage: ");      Serial.print(voltage);      Serial.println("V");
+      Serial.print("Current: ");      Serial.print(current);      Serial.println("A");
+      Serial.print("Power: ");        Serial.print(power);        Serial.println("W");
+      Serial.print("Energy: ");       Serial.print(energy,3);     Serial.println("kWh");
+      Serial.print("Frequency: ");    Serial.print(frequency, 1); Serial.println("Hz");
+      Serial.print("PF: ");           Serial.println(pf);
+  }
+  Serial.println();
 }

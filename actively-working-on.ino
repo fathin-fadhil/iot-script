@@ -3,6 +3,10 @@
 #include <DHT.h>
 #include <PZEM004Tv30.h>
 #include <SoftwareSerial.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27,16,2);
 
 //start of wifi stuff
 #ifndef STASSID
@@ -23,12 +27,12 @@ const char* password = STAPSK;
 SoftwareSerial pzemSWSerial(PZEM_RX_PIN, PZEM_TX_PIN);
 PZEM004Tv30 pzem(pzemSWSerial);
 
-float voltage = 0.0;
-float current = 0.0;
-float power = 0.0;
-float energy = 0.0;
-float frequency = 0.0;
-float pf = 0.0;
+float voltage;
+float current;
+float power;
+float energy;
+float frequency;
+float pf;
 //end of pzem
 
 //start of firebase
@@ -53,10 +57,15 @@ float t;
 void setup() {
   Serial.begin(115200);
   dht.begin();
+  Wire.begin(2,0);
+  lcd.init();
+  lcd.backlight();
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
+  lcd.setCursor(0,0);
+  lcd.print("Waiting for WiFi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -65,6 +74,8 @@ void setup() {
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
+  lcd.clear();
+  lcd.print("WiFi Connected");
 
   Serial.println("IP address: " + WiFi.localIP().toString());
 
@@ -178,18 +189,23 @@ void pzemRead(){
   // Check if the data is valid
   if(isnan(voltage)){
       Serial.println("Error reading voltage");
+      lcd.clear(); lcd.print("volt read Error");
   } else if (isnan(current)) {
       Serial.println("Error reading current");
+      lcd.clear(); lcd.print("amps read Error");
   } else if (isnan(power)) {
       Serial.println("Error reading power");
+      lcd.clear(); lcd.print("pwr read Error");
   } else if (isnan(energy)) {
       Serial.println("Error reading energy");
+      lcd.clear(); lcd.print("energy read Err");
   } else if (isnan(frequency)) {
       Serial.println("Error reading frequency");
+      lcd.clear(); lcd.print("Hz read Error");
   } else if (isnan(pf)) {
       Serial.println("Error reading power factor");
+      lcd.clear(); lcd.print("pf read Error");
   } else {
-
       // Print the values to the Serial console
       Serial.print("Voltage: ");      Serial.print(voltage);      Serial.println("V");
       Serial.print("Current: ");      Serial.print(current);      Serial.println("A");
@@ -197,6 +213,13 @@ void pzemRead(){
       Serial.print("Energy: ");       Serial.print(energy,3);     Serial.println("kWh");
       Serial.print("Frequency: ");    Serial.print(frequency, 1); Serial.println("Hz");
       Serial.print("PF: ");           Serial.println(pf);
+
+      //print ke el ce de
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print(voltage, 1); lcd.print("V"); lcd.setCursor(7,0); lcd.print(energy, 3); lcd.print("kWh");
+      lcd.setCursor(0,1);
+      lcd.print(power); lcd.print("W"); lcd.setCursor(9,1); lcd.print(current); lcd.print("A");
   }
   Serial.println();
 }

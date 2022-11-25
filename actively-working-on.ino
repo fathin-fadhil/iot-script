@@ -44,7 +44,7 @@ FirebaseJson json;
 //end of firebase
 
 //dht stuff
-#define DHTPIN D1
+#define DHTPIN D2
 #define DHTTYPE DHT11
 DHT dht(DHTPIN, DHTTYPE);
 float h;
@@ -52,7 +52,8 @@ float t;
 //end of dht
 
 //pin declaration
-#define fan1Pin D2
+#define fan1Pin D1
+#define relay1Pin D7
 
 void setup() {
   Serial.begin(115200);
@@ -83,6 +84,7 @@ void setup() {
   Firebase.reconnectWiFi(true);
 
   pinMode(fan1Pin, OUTPUT);
+  pinMode(relay1Pin, OUTPUT);
 }
 
 void loop() {
@@ -135,16 +137,10 @@ void relayUpdate(){
   if (Firebase.getString(firebaseData, "/Relay/StatusRelay1")){
     if (firebaseData.stringData() == "ON") {
     Serial.println("Relay 1 is ON");
+    digitalWrite(relay1Pin, HIGH);
     } else {
       Serial.println("Relay 1 is OFF");
-      }
-  }
-
-  if (Firebase.getString(firebaseData, "/Relay/StatusRelay2")){
-    if (firebaseData.stringData() == "ON") {
-    Serial.println("Relay 2 is ON");
-    } else {
-      Serial.println("Relay 2 is OFF");
+      digitalWrite(relay1Pin, LOW);
       }
   }
 }

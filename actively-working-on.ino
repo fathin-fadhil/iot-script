@@ -134,26 +134,28 @@ void sensorUpdate(){
 }
 
 void relayUpdate(){
+  //relay high is actually off while low is on, idk why. the cable is on no(normally open) tho
   if (Firebase.getString(firebaseData, "/Relay/StatusRelay1")){
     if (firebaseData.stringData() == "ON") {
     Serial.println("Relay 1 is ON");
-    digitalWrite(relay1Pin, HIGH);
+    digitalWrite(relay1Pin, LOW);
     } else {
       Serial.println("Relay 1 is OFF");
-      digitalWrite(relay1Pin, LOW);
+      digitalWrite(relay1Pin, HIGH);
       }
   }
 }
 
 void fanUpdate(){
   if (Firebase.getBool(firebaseData, "/Fan/isAuto")){
+    //relay high is actually off while low is on, idk why. the cable is on no(normally open) tho
     if (firebaseData.boolData()) {
       Serial.println("Fan is in auto");
       if(t>30){
-        digitalWrite(fan1Pin, HIGH);
+        digitalWrite(fan1Pin, LOW);
         Serial.println("Fan is on");
       } else {
-        digitalWrite(fan1Pin, LOW);
+        digitalWrite(fan1Pin, HIGH);
         Serial.println("Fan is off");
       }
     } else {
@@ -161,10 +163,10 @@ void fanUpdate(){
       if (Firebase.getString(firebaseData, "/Fan/fan1")){
         if (firebaseData.stringData() == "ON") {
           Serial.println("fan 1 is ON");
-          digitalWrite(fan1Pin, HIGH);
+          digitalWrite(fan1Pin, LOW);
         } else {
           Serial.println("fan 1 is OFF");
-          digitalWrite(fan1Pin, LOW);
+          digitalWrite(fan1Pin, HIGH);
           }
       }
     }
